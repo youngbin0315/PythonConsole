@@ -43,8 +43,8 @@ def input_matrix(name, size=3):
     print(f"\n[{name}] {size}x{size} 행렬을 한 줄씩 공백으로 구분하여 입력하세요.")
     matrix = []
     while len(matrix) < size:
-        row_str = input(f"행 {len(matrix) + 1}: ")
         try:
+            row_str = input(f"행 {len(matrix) + 1}: ")
             row = [float(x) for x in row_str.split()]
             if len(row) != size:
                 print(f"입력 형식 오류: 정확히 {size}개의 숫자를 입력해야 합니다. 다시 입력해주세요.")
@@ -74,7 +74,6 @@ def mode_user_input():
     print("\n--- 결과 ---")
     print(f"필터 A MAC 점수: {score_a:.4f}")
     print(f"필터 B MAC 점수: {score_b:.4f}")
-    print(f"평균 연산 시간(10회): {avg_time:.6f} ms")
     print(f"판정 결과: {result}")
     
     print("\n--- 성능 분석 (3x3) ---")
@@ -97,12 +96,11 @@ def mode_json_analysis():
     filters = data.get('filters', {})
     patterns = data.get('patterns', {})
 
-    # 결과 집계용 변수
     total_cases = len(patterns)
     pass_count = 0
     fail_count = 0
     failed_cases = []
-    perf_data = {} # 크기별 성능 측정 데이터 저장
+    perf_data = {}
 
     print(f"총 {total_cases}개의 패턴을 분석합니다...\n")
 
@@ -111,7 +109,6 @@ def mode_json_analysis():
         raw_expected = pat_data.get('expected', '')
         expected_label = normalize_label(raw_expected)
 
-        # 키에서 크기(N) 추출 (예: size_5_1 -> 5)
         try:
             size_n = int(pat_key.split('_')[1])
         except (IndexError, ValueError):
@@ -119,20 +116,17 @@ def mode_json_analysis():
             fail_count += 1
             continue
 
-        # 필터 로드 및 크기 검증
         filter_group = filters.get(f"size_{size_n}", {})
         if not filter_group:
             failed_cases.append((pat_key, f"size_{size_n} 필터를 찾을 수 없음"))
             fail_count += 1
             continue
             
-        # 패턴 크기 검증
         if len(input_pattern) != size_n or any(len(row) != size_n for row in input_pattern):
             failed_cases.append((pat_key, f"패턴 스키마 오류 (크기 {size_n}x{size_n} 불일치)"))
             fail_count += 1
             continue
 
-        # 라벨 정규화를 통한 필터 매핑
         cross_filter = None
         x_filter = None
         for f_key, f_matrix in filter_group.items():
@@ -145,12 +139,10 @@ def mode_json_analysis():
             fail_count += 1
             continue
 
-        # MAC 연산 및 판정
         score_cross = mac_operation(input_pattern, cross_filter)
         score_x = mac_operation(input_pattern, x_filter)
         decision = compare_scores(score_cross, score_x, "Cross", "X")
 
-        # PASS/FAIL 확인
         is_pass = (decision == expected_label)
         if is_pass:
             pass_count += 1
@@ -158,26 +150,21 @@ def mode_json_analysis():
             fail_count += 1
             failed_cases.append((pat_key, f"판정 실패 (Expected: {expected_label}, Got: {decision})"))
 
-        # 성능 측정 (크기별 1회 측정 누적)
         avg_t = measure_performance(input_pattern, cross_filter, 10)
         if size_n not in perf_data:
             perf_data[size_n] = []
         perf_data[size_n].append(avg_t)
 
-        # 개별 결과 출력
-        print(f"[{pat_key}] Cross: {score_cross:5.2f} | X: {score_x:5.2f} | 판정: {decision:10} | 결과: {'PASS' if is_pass else 'FAIL'}")
+        print(f"[{pat_key}] Cross: {score_cross:8.2f} | X: {score_x:8.2f} | 판정: {decision:10} | 결과: {'PASS' if is_pass else 'FAIL'}")
 
-    # --- 성능 분석 출력 ---
     print("\n--- 성능 분석 (크기별 MAC 연산) ---")
     print(f"{'크기(NxN)':<10} | {'평균 시간(ms)':<15} | {'연산 횟수(N²)'}")
     print("-" * 45)
     
-    # 크기순 정렬하여 출력
     for size in sorted(perf_data.keys()):
         overall_avg = sum(perf_data[size]) / len(perf_data[size])
         print(f"{f'{size}x{size}':<10} | {overall_avg:<15.6f} | {size**2}")
 
-    # --- 결과 요약 출력 ---
     print("\n=== [결과 리포트] ===")
     print(f"전체 테스트 수: {total_cases}")
     print(f"통과 수: {pass_count}")
@@ -195,23 +182,32 @@ def mode_json_analysis():
 
 def main():
     while True:
-        print("\n==================================")
-        print("  MAC 패턴 매칭 테스트 프로그램  ")
-        print("==================================")
-        print("1. 사용자 입력 모드 (3x3)")
-        print("2. JSON 데이터 분석 모드 (data.json)")
-        print("3. 종료")
-        choice = input("원하는 모드를 선택하세요 (1/2/3): ")
+        try:
+            print("\n==================================")
+            print("  MAC 패턴 매칭 테스트 프로그램  ")
+            print("==================================")
+            print("1. 사용자 입력 모드 (3x3)")
+            print("2. JSON 데이터 분석 모드 (data.json)")
+            print("3. 종료")
+            choice = input("원하는 모드를 선택하세요 (1/2/3): ")
 
-        if choice == '1':
-            mode_user_input()
-        elif choice == '2':
-            mode_json_analysis()
-        elif choice == '3':
-            print("프로그램을 종료합니다.")
+            if choice == '1':
+                mode_user_input()
+            elif choice == '2':
+                mode_json_analysis()
+            elif choice == '3':
+                print("프로그램을 종료합니다.")
+                break
+            else:
+                print("잘못된 입력입니다. 다시 선택해주세요.")
+                
+        # Ctrl+C 예외 처리 추가
+        except KeyboardInterrupt:
+            print("\n\n[알림] 강제 종료(Ctrl+C)가 감지되어 프로그램을 안전하게 종료합니다.")
             break
-        else:
-            print("잘못된 입력입니다. 다시 선택해주세요.")
+        except EOFError:
+            print("\n\n[알림] 입력 스트림이 종료되었습니다.")
+            break
 
 if __name__ == "__main__":
     main()
